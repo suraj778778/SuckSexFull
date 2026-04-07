@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io("https://sucksexfull.onrender.com");
 
 const screens = {
   landing: document.getElementById('landing-page'),
