@@ -1,3 +1,6 @@
+const socket = io();
+
+/* ---------------- SCREENS ---------------- */
 const screens = {
   landing: document.getElementById('landing-page'),
   setup: document.getElementById('setup-page'),
@@ -14,13 +17,26 @@ function showScreen(name) {
   screens[name].classList.add('active');
 }
 
-/* 👉 LANDING → SETUP */
+/* ---------------- VARIABLES ---------------- */
+let localStream;
+let peerConnection;
+
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
+
+const config = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" }
+  ]
+};
+
+/* ---------------- LANDING ---------------- */
 document.getElementById('landing-continue').onclick = () => {
   showScreen('setup');
 };
 
-/* 👉 SETUP → SEARCH */
-document.getElementById('setup-continue').onclick = () => {
+/* ---------------- SETUP ---------------- */
+document.getElementById('setup-continue').onclick = async () => {
   const name = document.getElementById('username').value;
   const mode = document.getElementById('mode').value;
 
@@ -29,13 +45,113 @@ document.getElementById('setup-continue').onclick = () => {
     return;
   }
 
+  // REGISTER USER
+  socket.emit("register_user", {
+    username: name,
+    gender: "male",
+    preference: "random"
+  });
+
   showScreen('search');
 
-  setTimeout(() => {
-    if (mode === "text") {
-      showScreen('chat');
-    } else {
-      showScreen('video');
-    }
-  }, 2000);
+  if (mode === "video") {
+    await startCamera();
+  }
+
+  // START MATCHING
+  socket.emit("select_mode", { mode });
 };
+
+/* ---------------- CAMERA ---------------- */
+async function startCamera() {
+  localStream = await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true
+  });
+
+  if (localVideo) {
+    localVideo.srcObject = localStream;
+  }
+}
+
+/* ---------------- CREATE PEER ---------------- */
+function createPeer() {
+  peerConnection = new RTCPeerConnection(config);
+
+  localStream.getTracks().forEach(track => {
+    peerConnection.addTrack(track, localStream);
+  });
+
+  peerConnection.ontrack = (event) => {
+    remoteVideo.srcObject = event.streams[0];
+  };
+
+  peerConnection.onicecandidate = (event) => {
+    if (event.candidate) {
+      socket.emit("webrtc_ice_candidate", {
+        candidate: event.candidate
+      });
+    }
+  };
+}
+
+/* ---------------- MATCHED ---------------- */
+socket.on("matched", async ({ mode }) => {
+  if (mode === "video") {
+    showScreen('video');
+    createPeer();
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    socket.emit("webrtc_offer", {
+      sdp: offer
+    });
+  } else {
+    showScreen('chat');
+  }
+});
+
+/* ---------------- OFFER ---------------- */
+socket.on("webrtc_offer", async ({ sdp }) => {
+  createPeer();
+
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+
+  socket.emit("webrtc_answer", {
+    sdp: answer
+  });
+});
+
+/* ---------------- ANSWER ---------------- */
+socket.on("webrtc_answer", async ({ sdp }) => {
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+});
+
+/* ---------------- ICE ---------------- */
+socket.on("webrtc_ice_candidate", async ({ candidate }) => {
+  try {
+    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+  } catch (e) {
+    console.error(e);
+  }
+});
+
+/* ---------------- NEXT ---------------- */
+function nextUser() {
+  if (peerConnection) peerConnection.close();
+  if (remoteVideo) remoteVideo.srcObject = null;
+
+  socket.emit("next_user");
+}
+
+/* ---------------- DISCONNECT ---------------- */
+socket.on("partner_left", () => {
+  if (peerConnection) peerConnection.close();
+  if (remoteVideo) remoteVideo.srcObject = null;
+
+  showScreen('search');
+});
