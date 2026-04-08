@@ -1,142 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SuckSexFull</title>
+<meta charset="UTF-8">
+<title>SuckSexFull</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: black;
-      color: white;
-      overflow: hidden;
-    }
+<style>
+body {
+  margin: 0;
+  background: black;
+  color: white;
+  font-family: Arial;
+  overflow: hidden;
+}
 
-    .screen {
-      display: none;
-      height: 100vh;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      text-align: center;
-    }
+.screen {
+  display: none;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
 
-    .active {
-      display: flex;
-    }
+.active {
+  display: flex;
+}
 
-    input, select {
-      padding: 10px;
-      margin: 10px;
-      width: 220px;
-    }
+button {
+  padding: 12px 20px;
+  margin: 10px;
+  background: red;
+  border: none;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+}
 
-    button {
-      padding: 12px 25px;
-      margin-top: 15px;
-      background: red;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
+input, select {
+  padding: 10px;
+  margin: 10px;
+  width: 220px;
+}
 
-    img {
-      width: 250px;
-      margin: 10px;
-    }
+/* CHAT UI */
+.chat-box {
+  width: 90%;
+  max-width: 400px;
+  height: 300px;
+  border: 1px solid white;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding: 10px;
+}
 
-    video {
-      width: 300px;
-      height: 200px;
-      background: black;
-      margin: 10px;
-    }
-  </style>
+.message {
+  margin: 5px 0;
+}
+
+.chat-input {
+  display: flex;
+}
+
+.chat-input input {
+  flex: 1;
+}
+
+/* VIDEO */
+video {
+  width: 300px;
+  height: 200px;
+  background: black;
+  margin: 10px;
+}
+</style>
 </head>
 
 <body>
 
-  <!-- LANDING -->
-  <div id="landing-page" class="screen active">
-    <h1>SuckSexFull</h1>
-    <img src="poster.jpg">
-    <p>Random chat & video calls</p>
-    <button id="landing-continue">Continue</button>
+<!-- LANDING -->
+<div id="landing-page" class="screen active">
+  <h1>SuckSexFull</h1>
+  <img src="poster.jpg" width="200">
+  <button id="landing-continue">Continue</button>
+</div>
+
+<!-- SETUP -->
+<div id="setup-page" class="screen">
+  <h2>Setup</h2>
+
+  <input id="username" placeholder="Enter name">
+
+  <select id="mode">
+    <option value="">Select Mode</option>
+    <option value="text">Chat</option>
+    <option value="video">Video</option>
+  </select>
+
+  <button id="setup-continue">Continue</button>
+</div>
+
+<!-- SEARCH -->
+<div id="search-page" class="screen">
+  <h2>Searching...</h2>
+</div>
+
+<!-- CHAT -->
+<div id="chat-page" class="screen">
+  <h2>Chat</h2>
+
+  <div id="chatBox" class="chat-box"></div>
+
+  <div class="chat-input">
+    <input id="chatInput" placeholder="Type message...">
+    <button id="sendBtn">Send</button>
   </div>
+</div>
 
-  <!-- SETUP -->
-  <div id="setup-page" class="screen">
-    <h2>Setup</h2>
+<!-- VIDEO -->
+<div id="video-page" class="screen">
+  <h2>Video Call</h2>
+  <video id="localVideo" autoplay muted></video>
+</div>
 
-    <input id="username" placeholder="Enter name">
+<script>
+const screens = {
+  landing: document.getElementById('landing-page'),
+  setup: document.getElementById('setup-page'),
+  search: document.getElementById('search-page'),
+  chat: document.getElementById('chat-page'),
+  video: document.getElementById('video-page'),
+};
 
-    <select id="mode">
-      <option value="">Select Mode</option>
-      <option value="text">Chat</option>
-      <option value="video">Video</option>
-    </select>
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[name].classList.add('active');
+}
 
-    <button id="setup-continue">Continue</button>
-  </div>
+/* LANDING */
+document.getElementById('landing-continue').onclick = () => {
+  showScreen('setup');
+};
 
-  <!-- SEARCH -->
-  <div id="search-page" class="screen">
-    <h2>Searching...</h2>
-  </div>
+/* SETUP */
+document.getElementById('setup-continue').onclick = async () => {
+  const name = document.getElementById('username').value;
+  const mode = document.getElementById('mode').value;
 
-  <!-- CHAT -->
-  <div id="chat-page" class="screen">
-    <h2>Chat Started</h2>
-  </div>
+  if (!name || !mode) {
+    alert("Enter details");
+    return;
+  }
 
-  <!-- VIDEO -->
-  <div id="video-page" class="screen">
-    <h2>Video Call</h2>
-    <video autoplay muted></video>
-    <video autoplay></video>
-  </div>
+  showScreen('search');
 
-  <script>
-    const screens = {
-      landing: document.getElementById('landing-page'),
-      setup: document.getElementById('setup-page'),
-      search: document.getElementById('search-page'),
-      chat: document.getElementById('chat-page'),
-      video: document.getElementById('video-page'),
-    };
+  setTimeout(async () => {
+    if (mode === "text") {
+      showScreen('chat');
+    } else {
+      showScreen('video');
 
-    function showScreen(name) {
-      Object.values(screens).forEach(s => s.classList.remove('active'));
-      screens[name].classList.add('active');
-    }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
 
-    document.getElementById('landing-continue').onclick = () => {
-      showScreen('setup');
-    };
-
-    document.getElementById('setup-continue').onclick = () => {
-      const name = document.getElementById('username').value;
-      const mode = document.getElementById('mode').value;
-
-      if (!name || !mode) {
-        alert("Enter details");
-        return;
+        document.getElementById('localVideo').srcObject = stream;
+      } catch (e) {
+        alert("Camera permission denied");
       }
+    }
+  }, 1000);
+};
 
-      showScreen('search');
+/* CHAT FUNCTION */
+document.getElementById('sendBtn').onclick = () => {
+  const input = document.getElementById('chatInput');
+  const message = input.value;
 
-      setTimeout(() => {
-        if (mode === "text") {
-          showScreen('chat');
-        } else {
-          showScreen('video');
-        }
-      }, 1500);
-    };
-  </script>
+  if (!message) return;
+
+  const div = document.createElement('div');
+  div.className = "message";
+  div.innerText = "You: " + message;
+
+  document.getElementById('chatBox').appendChild(div);
+
+  input.value = "";
+};
+</script>
 
 </body>
 </html>
