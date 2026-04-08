@@ -10,31 +10,31 @@
     <main class="app">
       <section id="landing-page" class="screen active card center-content">
         <h1 class="brand">SuckSexFull</h1>
+        <img src="poster.jpg" width="300">
         <p class="muted">Random chat & video calls with real people.</p>
         <button id="landing-continue" class="btn btn-primary bottom-btn">Continue</button>
       </section>
 
       <section id="setup-page" class="screen card">
-        <h2>User Setup</h2>
-        <label for="username">Username</label>
-        <input id="username" type="text" maxlength="20" placeholder="Choose a unique username" />
+       <h2>Setup</h2>
 
-        <label for="gender">Gender</label>
-        <select id="gender">
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
+<input id="username" type="text" placeholder="Enter your name"><br>
 
-        <label for="preference">Match with</label>
-        <select id="preference">
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="random">Random</option>
-        </select>
+<select id="gender">
+  <option value="">Select Gender</option>
+  <option value="male">Male</option>
+  <option value="female">Female</option>
+</select><br>
 
-        <button id="setup-continue" class="btn btn-primary">Continue</button>
-        <p id="setup-error" class="error-text"></p>
+<select id="mode">
+  <option value="">Choose Option</option>
+  <option value="text">Chat</option>
+  <option value="video">Video</option>
+</select><br>
+
+<button id="setup-continue" class="btn btn-primary">Continue</button>
+
+<p id="setup-error" class="error-text"></p>
       </section>
 
       <section id="mode-page" class="screen card center-content">
