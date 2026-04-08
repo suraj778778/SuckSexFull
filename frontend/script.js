@@ -1,88 +1,43 @@
 const socket = io();
 
-/* ---------------- SCREENS ---------------- */
-const screens = {
-  landing: document.getElementById('landing-page'),
-  setup: document.getElementById('setup-page'),
-  modePage: document.getElementById('mode-page'),
-  search: document.getElementById('search-page'),
-  chat: document.getElementById('chat-page'),
-  video: document.getElementById('video-page'),
-};
-
-function showScreen(name) {
-  Object.values(screens).forEach(screen => {
-    screen.classList.remove('active');
-  });
-  screens[name].classList.add('active');
-}
-
-/* ---------------- VARIABLES ---------------- */
 let localStream;
 let peerConnection;
 
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 
-/* 🔥 UPDATED ICE CONFIG (TURN ADDED) */
+/* ICE SERVERS */
 const config = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
-
     {
       urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject"
-    },
-    {
-      urls: "turn:openrelay.metered.ca:443",
       username: "openrelayproject",
       credential: "openrelayproject"
     }
   ]
 };
 
-/* ---------------- LANDING ---------------- */
-document.getElementById('landing-continue').onclick = () => {
-  showScreen('setup');
-};
+/* ---------------- START BUTTON ---------------- */
+document.getElementById("startBtn").onclick = async () => {
+  try {
+    // 1. Start camera
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
 
-/* ---------------- SETUP ---------------- */
-document.getElementById('setup-continue').onclick = async () => {
-  const name = document.getElementById('username').value;
-  const mode = document.getElementById('mode').value;
-
-  if (!name || !mode) {
-    alert("Enter name and select option");
-    return;
-  }
-
-  socket.emit("register_user", {
-    username: name,
-    gender: "male",
-    preference: "random"
-  });
-
-  showScreen('search');
-
-  if (mode === "video") {
-    await startCamera();
-  }
-
-  socket.emit("select_mode", { mode });
-};
-
-/* ---------------- CAMERA ---------------- */
-async function startCamera() {
-  localStream = await navigator.mediaDevices.getUserMedia({
-    video: true,
-    audio: true
-  });
-
-  if (localVideo) {
     localVideo.srcObject = localStream;
+
+    // 2. Start matching
+    socket.emit("register_user");
+    socket.emit("select_mode", { mode: "video" });
+
+  } catch (e) {
+    alert("Camera not working");
+    console.error(e);
   }
-}
+};
 
 /* ---------------- CREATE PEER ---------------- */
 function createPeer() {
@@ -106,20 +61,15 @@ function createPeer() {
 }
 
 /* ---------------- MATCHED ---------------- */
-socket.on("matched", async ({ mode }) => {
-  if (mode === "video") {
-    showScreen('video');
-    createPeer();
+socket.on("matched", async () => {
+  createPeer();
 
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
 
-    socket.emit("webrtc_offer", {
-      sdp: offer
-    });
-  } else {
-    showScreen('chat');
-  }
+  socket.emit("webrtc_offer", {
+    sdp: offer
+  });
 });
 
 /* ---------------- OFFER ---------------- */
@@ -131,9 +81,7 @@ socket.on("webrtc_offer", async ({ sdp }) => {
   const answer = await peerConnection.createAnswer();
   await peerConnection.setLocalDescription(answer);
 
-  socket.emit("webrtc_answer", {
-    sdp: answer
-  });
+  socket.emit("webrtc_answer", { sdp: answer });
 });
 
 /* ---------------- ANSWER ---------------- */
@@ -150,18 +98,21 @@ socket.on("webrtc_ice_candidate", async ({ candidate }) => {
   }
 });
 
-/* ---------------- NEXT ---------------- */
-function nextUser() {
+/* ---------------- NEXT BUTTON ---------------- */
+document.getElementById("nextBtn").onclick = () => {
   if (peerConnection) peerConnection.close();
-  if (remoteVideo) remoteVideo.srcObject = null;
+  remoteVideo.srcObject = null;
 
   socket.emit("next_user");
-}
+};
 
-/* ---------------- DISCONNECT ---------------- */
-socket.on("partner_left", () => {
+/* ---------------- STOP BUTTON ---------------- */
+document.getElementById("stopBtn").onclick = () => {
+  if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+  }
+
   if (peerConnection) peerConnection.close();
-  if (remoteVideo) remoteVideo.srcObject = null;
 
-  showScreen('search');
-});
+  remoteVideo.srcObject = null;
+};
