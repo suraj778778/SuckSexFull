@@ -10,7 +10,7 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 /* ✅ FIXED PATH */
-app.use(express.static(path.join(__dirname, 'frontend')));
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 /* ---------------- BASIC MATCHING ---------------- */
 let waitingUser = null;
