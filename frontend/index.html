@@ -14,20 +14,17 @@ body {
   overflow: hidden;
 }
 
-/* MAIN LAYOUT */
 .container {
   display: flex;
   height: 100vh;
   flex-direction: column;
 }
 
-/* VIDEO SECTION */
 .video-section {
   flex: 1;
   display: flex;
 }
 
-/* LEFT (RANDOM USER) */
 .remote {
   flex: 1;
   background: black;
@@ -36,7 +33,6 @@ body {
   align-items: center;
 }
 
-/* RIGHT (YOU) */
 .local {
   width: 35%;
   background: #111;
@@ -45,14 +41,12 @@ body {
   align-items: center;
 }
 
-/* VIDEO */
 video {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* CONTROLS */
 .controls {
   height: 120px;
   display: flex;
@@ -63,7 +57,6 @@ video {
   backdrop-filter: blur(10px);
 }
 
-/* BUTTONS */
 button {
   padding: 15px 25px;
   border: none;
@@ -72,41 +65,19 @@ button {
   cursor: pointer;
 }
 
-.start {
-  background: #22c55e;
-  color: white;
-}
+.start { background: #22c55e; color: white; }
+.next { background: #3b82f6; color: white; }
+.stop { background: #ef4444; color: white; }
 
-.next {
-  background: #3b82f6;
-  color: white;
-}
-
-.stop {
-  background: #ef4444;
-  color: white;
-}
-
-/* SELECT BOX */
 select {
   padding: 12px;
   border-radius: 10px;
 }
 
-/* RESPONSIVE */
 @media (max-width: 768px) {
-  .video-section {
-    flex-direction: column;
-  }
-
-  .local {
-    width: 100%;
-    height: 30%;
-  }
-
-  .remote {
-    height: 70%;
-  }
+  .video-section { flex-direction: column; }
+  .local { width: 100%; height: 30%; }
+  .remote { height: 70%; }
 }
 </style>
 </head>
@@ -115,22 +86,18 @@ select {
 
 <div class="container">
 
-  <!-- VIDEO AREA -->
   <div class="video-section">
 
-    <!-- RANDOM USER -->
     <div class="remote">
       <video id="remoteVideo" autoplay playsinline></video>
     </div>
 
-    <!-- YOUR CAMERA -->
     <div class="local">
       <video id="localVideo" autoplay muted playsinline></video>
     </div>
 
   </div>
 
-  <!-- CONTROLS -->
   <div class="controls">
     <button class="start" id="startBtn">Start</button>
     <button class="next" id="nextBtn">Next</button>
@@ -145,35 +112,11 @@ select {
 
 </div>
 
-<script>
-let localStream;
+<!-- ✅ SOCKET.IO (IMPORTANT) -->
+<script src="/socket.io/socket.io.js"></script>
 
-// START CAMERA
-document.getElementById("startBtn").onclick = async () => {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true
-    });
-
-    document.getElementById("localVideo").srcObject = localStream;
-  } catch (e) {
-    alert("Camera permission denied");
-  }
-};
-
-// STOP
-document.getElementById("stopBtn").onclick = () => {
-  if (localStream) {
-    localStream.getTracks().forEach(track => track.stop());
-  }
-};
-
-// NEXT (placeholder)
-document.getElementById("nextBtn").onclick = () => {
-  alert("Next user feature coming in next step");
-};
-</script>
+<!-- ✅ YOUR MAIN SCRIPT -->
+<script src="script.js"></script>
 
 </body>
 </html>
