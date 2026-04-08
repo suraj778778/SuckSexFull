@@ -9,59 +9,53 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #0f172a, #1e3a8a, #020617);
+  background: black;
   color: white;
   overflow: hidden;
 }
 
-.container {
-  display: flex;
+/* VIDEO */
+.video-container {
+  position: relative;
+  width: 100%;
   height: 100vh;
-  flex-direction: column;
-}
-
-.video-section {
-  flex: 1;
-  display: flex;
-}
-
-.remote {
-  flex: 1;
-  background: black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.local {
-  width: 35%;
-  background: #111;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 video {
+  position: absolute;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
+/* SMALL SELF VIEW */
+#localVideo {
+  width: 120px;
+  height: 180px;
+  bottom: 20px;
+  right: 20px;
+  position: absolute;
+  border-radius: 10px;
+  border: 2px solid white;
+}
+
+/* CONTROLS (LEFT SIDE VERTICAL) */
 .controls {
-  height: 120px;
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
   gap: 15px;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(10px);
+  z-index: 10;
 }
 
 button {
-  padding: 15px 25px;
+  padding: 12px 15px;
   border: none;
-  border-radius: 12px;
-  font-size: 16px;
+  border-radius: 10px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -70,33 +64,36 @@ button {
 .stop { background: #ef4444; color: white; }
 
 select {
-  padding: 12px;
-  border-radius: 10px;
+  padding: 10px;
+  border-radius: 8px;
 }
 
+/* MOBILE FIX */
 @media (max-width: 768px) {
-  .video-section { flex-direction: column; }
-  .local { width: 100%; height: 30%; }
-  .remote { height: 70%; }
+  #localVideo {
+    width: 90px;
+    height: 130px;
+  }
+
+  .controls {
+    left: 5px;
+    gap: 10px;
+  }
+
+  button {
+    padding: 10px;
+    font-size: 12px;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="video-container">
 
-  <div class="video-section">
-
-    <div class="remote">
-      <video id="remoteVideo" autoplay playsinline></video>
-    </div>
-
-    <div class="local">
-      <video id="localVideo" autoplay muted playsinline></video>
-    </div>
-
-  </div>
+  <video id="remoteVideo" autoplay playsinline></video>
+  <video id="localVideo" autoplay muted playsinline></video>
 
   <div class="controls">
     <button class="start" id="startBtn">Start</button>
@@ -112,10 +109,7 @@ select {
 
 </div>
 
-<!-- ✅ SOCKET.IO (IMPORTANT) -->
 <script src="/socket.io/socket.io.js"></script>
-
-<!-- ✅ YOUR MAIN SCRIPT -->
 <script src="script.js"></script>
 
 </body>
