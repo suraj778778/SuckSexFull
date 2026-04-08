@@ -9,33 +9,26 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 
-/* ✅ FIXED PATH */
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-/* ---------------- BASIC MATCHING ---------------- */
-let waitingUser = null;
+let waitingUsers = [];
 
 io.on('connection', (socket) => {
   console.log("User connected:", socket.id);
 
-  socket.on("register_user", () => {
-    console.log("User registered");
-  });
+  socket.on("select_mode", () => {
 
-  socket.on("select_mode", ({ mode }) => {
+    waitingUsers.push(socket);
 
-    if (waitingUser) {
-      const partner = waitingUser;
-      waitingUser = null;
+    if (waitingUsers.length >= 2) {
+      const user1 = waitingUsers.shift();
+      const user2 = waitingUsers.shift();
 
-      socket.partner = partner.id;
-      partner.partner = socket.id;
+      user1.partner = user2.id;
+      user2.partner = user1.id;
 
-      socket.emit("matched", { mode: "video" });
-      partner.emit("matched", { mode: "video" });
-
-    } else {
-      waitingUser = socket;
+      user1.emit("matched");
+      user2.emit("matched");
     }
   });
 
@@ -57,14 +50,15 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on("next_user", () => {
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+
+    waitingUsers = waitingUsers.filter(s => s.id !== socket.id);
+
     if (socket.partner) {
       io.to(socket.partner).emit("partner_left");
     }
-    socket.partner = null;
-    waitingUser = socket;
   });
-
 });
 
 server.listen(PORT, () => {
