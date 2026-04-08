@@ -1,7 +1,7 @@
 const screens = {
   landing: document.getElementById('landing-page'),
   setup: document.getElementById('setup-page'),
-  mode: document.getElementById('mode-page'),
+  modePage: document.getElementById('mode-page'),
   search: document.getElementById('search-page'),
   chat: document.getElementById('chat-page'),
   video: document.getElementById('video-page'),
