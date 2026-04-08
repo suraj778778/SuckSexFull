@@ -154,24 +154,34 @@ landingContinue.addEventListener('click', () => {
 
 setupContinue.addEventListener('click', () => {
   const username = usernameInput.value.trim();
-  if (!username) {
-    setupError.textContent = 'Username is required.';
+  const gender = genderInput.value;
+  const mode = document.getElementById('mode').value;
+
+  if (!username || !mode) {
+    setupError.textContent = 'Enter name and select option.';
     return;
   }
 
   setupError.textContent = '';
-  const gender = genderInput.value;
-  const preference = preferenceInput.value;
 
-  socket.emit('register_user', { username, gender, preference }, (result) => {
+  socket.emit('register_user', {
+    username,
+    gender,
+    preference: 'random'
+  }, (result) => {
     if (!result.ok) {
       setupError.textContent = result.error;
       return;
     }
 
-    profile = { username, gender, preference };
-    showScreen('mode');
-    notify(`Welcome, ${username}. Choose chat or video.`);
+    profile = { username, gender };
+
+    currentMode = mode;
+
+    showScreen('search');
+    notify(`Searching for a ${mode} match...`);
+
+    socket.emit('select_mode', { mode });
   });
 });
 
