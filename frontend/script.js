@@ -6,7 +6,6 @@ let peerConnection;
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 
-/* ICE SERVERS */
 const config = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -18,10 +17,9 @@ const config = {
   ]
 };
 
-/* ---------------- START BUTTON ---------------- */
+/* START BUTTON */
 document.getElementById("startBtn").onclick = async () => {
   try {
-    // START CAMERA
     localStream = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: true
@@ -29,16 +27,14 @@ document.getElementById("startBtn").onclick = async () => {
 
     localVideo.srcObject = localStream;
 
-    // START MATCHING (IMPORTANT CHANGE)
     socket.emit("start");
 
   } catch (e) {
     alert("Camera error");
-    console.error(e);
   }
 };
 
-/* ---------------- CREATE PEER ---------------- */
+/* CREATE PEER */
 function createPeer() {
   peerConnection = new RTCPeerConnection(config);
 
@@ -59,19 +55,19 @@ function createPeer() {
   };
 }
 
-/* ---------------- MATCHED ---------------- */
+/* MATCHED */
 socket.on("matched", async () => {
+  console.log("MATCHED");
+
   createPeer();
 
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
 
-  socket.emit("webrtc_offer", {
-    sdp: offer
-  });
+  socket.emit("webrtc_offer", { sdp: offer });
 });
 
-/* ---------------- OFFER ---------------- */
+/* OFFER */
 socket.on("webrtc_offer", async ({ sdp }) => {
   createPeer();
 
@@ -83,35 +79,22 @@ socket.on("webrtc_offer", async ({ sdp }) => {
   socket.emit("webrtc_answer", { sdp: answer });
 });
 
-/* ---------------- ANSWER ---------------- */
+/* ANSWER */
 socket.on("webrtc_answer", async ({ sdp }) => {
   await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
 });
 
-/* ---------------- ICE ---------------- */
+/* ICE */
 socket.on("webrtc_ice_candidate", async ({ candidate }) => {
   try {
     await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-  } catch (e) {
-    console.error(e);
-  }
+  } catch (e) {}
 });
 
-/* ---------------- NEXT BUTTON ---------------- */
+/* NEXT */
 document.getElementById("nextBtn").onclick = () => {
   if (peerConnection) peerConnection.close();
   remoteVideo.srcObject = null;
 
-  socket.emit("start"); // find new user
-};
-
-/* ---------------- STOP BUTTON ---------------- */
-document.getElementById("stopBtn").onclick = () => {
-  if (localStream) {
-    localStream.getTracks().forEach(track => track.stop());
-  }
-
-  if (peerConnection) peerConnection.close();
-
-  remoteVideo.srcObject = null;
+  socket.emit("start");
 };
