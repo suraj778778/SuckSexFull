@@ -1,8 +1,8 @@
 const socket = io();
 
 let localStream;
-let peerConnection;
-let isCaller = false; // 🔥 IMPORTANT
+let peerConnection = null;
+let isCaller = false;
 
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
@@ -18,7 +18,7 @@ const config = {
   ]
 };
 
-/* START BUTTON */
+/* START */
 document.getElementById("startBtn").onclick = async () => {
   localStream = await navigator.mediaDevices.getUserMedia({
     video: true,
@@ -32,6 +32,8 @@ document.getElementById("startBtn").onclick = async () => {
 
 /* CREATE PEER */
 function createPeer() {
+  if (peerConnection) return;
+
   peerConnection = new RTCPeerConnection(config);
 
   localStream.getTracks().forEach(track => {
@@ -52,10 +54,10 @@ function createPeer() {
 }
 
 /* MATCHED */
-socket.on("matched", ({ caller }) => {
+socket.on("matched", (data) => {
   console.log("MATCHED");
 
-  isCaller = caller;
+  isCaller = data.caller;
 
   createPeer();
 
@@ -64,7 +66,7 @@ socket.on("matched", ({ caller }) => {
   }
 });
 
-/* CREATE OFFER */
+/* OFFER */
 async function createOffer() {
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
@@ -72,9 +74,9 @@ async function createOffer() {
   socket.emit("webrtc_offer", { sdp: offer });
 }
 
-/* OFFER RECEIVED */
+/* RECEIVE OFFER */
 socket.on("webrtc_offer", async ({ sdp }) => {
-  if (!peerConnection) createPeer();
+  createPeer();
 
   await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
 
@@ -84,7 +86,7 @@ socket.on("webrtc_offer", async ({ sdp }) => {
   socket.emit("webrtc_answer", { sdp: answer });
 });
 
-/* ANSWER RECEIVED */
+/* RECEIVE ANSWER */
 socket.on("webrtc_answer", async ({ sdp }) => {
   await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
 });
@@ -98,7 +100,11 @@ socket.on("webrtc_ice_candidate", async ({ candidate }) => {
 
 /* NEXT */
 document.getElementById("nextBtn").onclick = () => {
-  if (peerConnection) peerConnection.close();
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+
   remoteVideo.srcObject = null;
 
   socket.emit("start");
