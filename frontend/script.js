@@ -21,7 +21,7 @@ const config = {
 /* ---------------- START BUTTON ---------------- */
 document.getElementById("startBtn").onclick = async () => {
   try {
-    // 1. Start camera
+    // START CAMERA
     localStream = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: true
@@ -29,12 +29,11 @@ document.getElementById("startBtn").onclick = async () => {
 
     localVideo.srcObject = localStream;
 
-    // 2. Start matching
-    socket.emit("register_user");
-    socket.emit("select_mode", { mode: "video" });
+    // START MATCHING (IMPORTANT CHANGE)
+    socket.emit("start");
 
   } catch (e) {
-    alert("Camera not working");
+    alert("Camera error");
     console.error(e);
   }
 };
@@ -103,7 +102,7 @@ document.getElementById("nextBtn").onclick = () => {
   if (peerConnection) peerConnection.close();
   remoteVideo.srcObject = null;
 
-  socket.emit("next_user");
+  socket.emit("start"); // find new user
 };
 
 /* ---------------- STOP BUTTON ---------------- */
