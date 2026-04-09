@@ -18,9 +18,8 @@ io.on('connection', (socket) => {
 
   socket.on("start", () => {
 
-    console.log("User started:", socket.id);
+    console.log("Start clicked:", socket.id);
 
-    // If someone is already waiting
     if (waitingUser && waitingUser !== socket) {
 
       const partner = waitingUser;
@@ -30,14 +29,12 @@ io.on('connection', (socket) => {
 
       waitingUser = null;
 
-      // CONNECT BOTH
       socket.emit("matched");
       partner.emit("matched");
 
       console.log("Matched:", socket.id, partner.id);
 
     } else {
-      // Put user in waiting
       waitingUser = socket;
       console.log("Waiting:", socket.id);
     }
