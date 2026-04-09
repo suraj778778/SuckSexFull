@@ -11,32 +11,30 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-let waitingUser = null;
+// 🔥 QUEUE SYSTEM
+let queue = [];
 
 io.on('connection', (socket) => {
   console.log("User connected:", socket.id);
 
   socket.on("start", () => {
+    console.log("User searching:", socket.id);
 
-    console.log("Start clicked:", socket.id);
+    // Add user to queue
+    queue.push(socket);
 
-    if (waitingUser && waitingUser !== socket) {
+    // If 2 users available → match
+    if (queue.length >= 2) {
+      const user1 = queue.shift();
+      const user2 = queue.shift();
 
-      const partner = waitingUser;
+      user1.partner = user2.id;
+      user2.partner = user1.id;
 
-      socket.partner = partner.id;
-      partner.partner = socket.id;
+      user1.emit("matched");
+      user2.emit("matched");
 
-      waitingUser = null;
-
-      socket.emit("matched");
-      partner.emit("matched");
-
-      console.log("Matched:", socket.id, partner.id);
-
-    } else {
-      waitingUser = socket;
-      console.log("Waiting:", socket.id);
+      console.log("Matched:", user1.id, user2.id);
     }
   });
 
@@ -61,9 +59,8 @@ io.on('connection', (socket) => {
   socket.on("disconnect", () => {
     console.log("Disconnected:", socket.id);
 
-    if (waitingUser === socket) {
-      waitingUser = null;
-    }
+    // Remove from queue if waiting
+    queue = queue.filter(s => s.id !== socket.id);
 
     if (socket.partner) {
       io.to(socket.partner).emit("partner_left");
