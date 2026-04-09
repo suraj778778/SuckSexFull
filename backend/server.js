@@ -11,24 +11,35 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-let waitingUsers = [];
+let waitingUser = null;
 
 io.on('connection', (socket) => {
   console.log("User connected:", socket.id);
 
-  socket.on("select_mode", () => {
+  socket.on("start", () => {
 
-    waitingUsers.push(socket);
+    console.log("User started:", socket.id);
 
-    if (waitingUsers.length >= 2) {
-      const user1 = waitingUsers.shift();
-      const user2 = waitingUsers.shift();
+    // If someone is already waiting
+    if (waitingUser && waitingUser !== socket) {
 
-      user1.partner = user2.id;
-      user2.partner = user1.id;
+      const partner = waitingUser;
 
-      user1.emit("matched");
-      user2.emit("matched");
+      socket.partner = partner.id;
+      partner.partner = socket.id;
+
+      waitingUser = null;
+
+      // CONNECT BOTH
+      socket.emit("matched");
+      partner.emit("matched");
+
+      console.log("Matched:", socket.id, partner.id);
+
+    } else {
+      // Put user in waiting
+      waitingUser = socket;
+      console.log("Waiting:", socket.id);
     }
   });
 
@@ -51,9 +62,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected");
+    console.log("Disconnected:", socket.id);
 
-    waitingUsers = waitingUsers.filter(s => s.id !== socket.id);
+    if (waitingUser === socket) {
+      waitingUser = null;
+    }
 
     if (socket.partner) {
       io.to(socket.partner).emit("partner_left");
