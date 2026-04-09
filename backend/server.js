@@ -26,22 +26,28 @@ io.on('connection', (socket) => {
       user1.partner = user2.id;
       user2.partner = user1.id;
 
-      // 🔥 KEY FIX: assign roles
+      // 🔥 FIX: send caller info
       user1.emit("matched", { caller: true });
       user2.emit("matched", { caller: false });
     }
   });
 
   socket.on("webrtc_offer", ({ sdp }) => {
-    io.to(socket.partner).emit("webrtc_offer", { sdp });
+    if (socket.partner) {
+      io.to(socket.partner).emit("webrtc_offer", { sdp });
+    }
   });
 
   socket.on("webrtc_answer", ({ sdp }) => {
-    io.to(socket.partner).emit("webrtc_answer", { sdp });
+    if (socket.partner) {
+      io.to(socket.partner).emit("webrtc_answer", { sdp });
+    }
   });
 
   socket.on("webrtc_ice_candidate", ({ candidate }) => {
-    io.to(socket.partner).emit("webrtc_ice_candidate", { candidate });
+    if (socket.partner) {
+      io.to(socket.partner).emit("webrtc_ice_candidate", { candidate });
+    }
   });
 
   socket.on("disconnect", () => {
@@ -53,4 +59,6 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT);
+server.listen(PORT, () => {
+  console.log("Server running");
+});
