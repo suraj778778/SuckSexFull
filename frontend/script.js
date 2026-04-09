@@ -2,6 +2,7 @@ const socket = io();
 
 let localStream;
 let peerConnection;
+let isCaller = false; // 🔥 IMPORTANT
 
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
@@ -19,19 +20,14 @@ const config = {
 
 /* START BUTTON */
 document.getElementById("startBtn").onclick = async () => {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true
-    });
+  localStream = await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true
+  });
 
-    localVideo.srcObject = localStream;
+  localVideo.srcObject = localStream;
 
-    socket.emit("start");
-
-  } catch (e) {
-    alert("Camera error");
-  }
+  socket.emit("start");
 };
 
 /* CREATE PEER */
@@ -56,20 +52,29 @@ function createPeer() {
 }
 
 /* MATCHED */
-socket.on("matched", async () => {
+socket.on("matched", ({ caller }) => {
   console.log("MATCHED");
+
+  isCaller = caller;
 
   createPeer();
 
+  if (isCaller) {
+    createOffer();
+  }
+});
+
+/* CREATE OFFER */
+async function createOffer() {
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
 
   socket.emit("webrtc_offer", { sdp: offer });
-});
+}
 
-/* OFFER */
+/* OFFER RECEIVED */
 socket.on("webrtc_offer", async ({ sdp }) => {
-  createPeer();
+  if (!peerConnection) createPeer();
 
   await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
 
@@ -79,16 +84,16 @@ socket.on("webrtc_offer", async ({ sdp }) => {
   socket.emit("webrtc_answer", { sdp: answer });
 });
 
-/* ANSWER */
+/* ANSWER RECEIVED */
 socket.on("webrtc_answer", async ({ sdp }) => {
   await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
 });
 
 /* ICE */
 socket.on("webrtc_ice_candidate", async ({ candidate }) => {
-  try {
+  if (peerConnection) {
     await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-  } catch (e) {}
+  }
 });
 
 /* NEXT */
