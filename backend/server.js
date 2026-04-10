@@ -7,30 +7,38 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
-
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 let queue = [];
 
 io.on('connection', (socket) => {
+  console.log("User connected:", socket.id);
 
   socket.on("start", () => {
+    // remove if already in queue
+    queue = queue.filter(s => s.id !== socket.id);
 
     queue.push(socket);
 
-    if (queue.length >= 2) {
+    tryMatch();
+  });
+
+  function tryMatch() {
+    while (queue.length >= 2) {
       const user1 = queue.shift();
       const user2 = queue.shift();
+
+      if (!user1 || !user2) return;
 
       user1.partner = user2.id;
       user2.partner = user1.id;
 
-      // 🔥 FIX: send caller info
       user1.emit("matched", { caller: true });
       user2.emit("matched", { caller: false });
+
+      console.log("Matched:", user1.id, user2.id);
     }
-  });
+  }
 
   socket.on("webrtc_offer", ({ sdp }) => {
     if (socket.partner) {
@@ -50,6 +58,17 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on("next", () => {
+    if (socket.partner) {
+      io.to(socket.partner).emit("partner_left");
+    }
+
+    socket.partner = null;
+
+    queue.push(socket);
+    tryMatch();
+  });
+
   socket.on("disconnect", () => {
     queue = queue.filter(s => s.id !== socket.id);
 
@@ -59,6 +78,6 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(3000, () => {
   console.log("Server running");
 });
