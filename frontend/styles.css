@@ -1,6 +1,7 @@
 body {
   margin: 0;
   background: #f5f5dc;
+  font-family: Arial;
 }
 
 .container {
@@ -9,17 +10,24 @@ body {
   height: 100vh;
 }
 
-.remote video, #placeholder {
+/* VIDEO */
+.remote video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+#placeholder {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.remote video { display: none; }
-
+/* LOCAL */
 .local {
   position: absolute;
-  bottom: 80px;
+  bottom: 90px;
   right: 10px;
   width: 110px;
   height: 150px;
@@ -31,35 +39,41 @@ body {
   transform: scaleX(-1);
 }
 
-/* LEFT BUTTONS */
-.controls-left {
+/* BUTTONS */
+.controls-left, .controls-right {
   position: absolute;
-  left: 10px;
   top: 50%;
   transform: translateY(-50%);
 }
 
-/* RIGHT BUTTONS */
-.controls-right {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-}
+.controls-left { left: 10px; }
+.controls-right { right: 10px; }
 
 button {
   display: block;
   margin: 10px;
-  padding: 12px;
-  border-radius: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  border: none;
+  color: white;
+  font-weight: bold;
 }
+
+/* COLORS */
+#startBtn { background: #22c55e; }   /* green */
+#stopBtn { background: #ef4444; }    /* red */
+#nextBtn { background: #facc15; color: black; } /* yellow */
+#filterBtn { background: #ec4899; }  /* pink */
+#cameraBtn { background: white; color: black; }
 
 /* SEARCH */
 #searching {
   position: absolute;
   top: 50%;
   left: 50%;
-  color: white;
   transform: translate(-50%, -50%);
+  font-size: 28px;
+  color: black;
   display: none;
 }
