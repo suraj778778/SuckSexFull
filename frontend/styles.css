@@ -10,7 +10,7 @@ body {
   height: 100vh;
 }
 
-/* VIDEO */
+/* REMOTE */
 .remote video {
   width: 100%;
   height: 100%;
@@ -18,25 +18,39 @@ body {
   display: none;
 }
 
-#placeholder {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 /* LOCAL */
 .local {
   position: absolute;
-  bottom: 90px;
+  bottom: 80px;
   right: 10px;
-  width: 110px;
-  height: 150px;
+  width: 120px;
+  height: 160px;
+  z-index: 10;
 }
 
 .local video {
   width: 100%;
   height: 100%;
   transform: scaleX(-1);
+}
+
+/* SWAP MODE */
+.fullscreen {
+  position: absolute !important;
+  width: 100% !important;
+  height: 100% !important;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.small {
+  width: 120px !important;
+  height: 160px !important;
+  bottom: 80px;
+  right: 10px;
+  position: absolute;
+  z-index: 10;
 }
 
 /* BUTTONS */
@@ -54,26 +68,34 @@ button {
   margin: 10px;
   padding: 14px;
   border-radius: 12px;
-  font-size: 14px;
   border: none;
-  color: white;
   font-weight: bold;
 }
 
-/* COLORS */
-#startBtn { background: #22c55e; }   /* green */
-#stopBtn { background: #ef4444; }    /* red */
-#nextBtn { background: #facc15; color: black; } /* yellow */
-#filterBtn { background: #ec4899; }  /* pink */
+#startBtn { background: #22c55e; }
+#stopBtn { background: #ef4444; }
+#nextBtn { background: #facc15; color: black; }
+#filterBtn { background: #ec4899; }
 #cameraBtn { background: white; color: black; }
 
-/* SEARCH */
+/* SEARCH LOADER */
 #searching {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 28px;
-  color: black;
   display: none;
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 4px solid black;
+  border-top: 4px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
 }
