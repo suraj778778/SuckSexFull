@@ -12,10 +12,15 @@
 
 <div class="container">
 
-  <!-- REMOTE VIDEO -->
+  <!-- REMOTE VIDEO / IMAGE -->
   <div class="remote">
+    <img id="placeholder" src="poster.jpg" />
     <video id="remoteVideo" autoplay playsinline></video>
-    <div id="status">Click Start to begin</div>
+
+    <div id="searching">
+      <div class="loader"></div>
+      <p>Searching...</p>
+    </div>
   </div>
 
   <!-- LOCAL VIDEO -->
