@@ -6,7 +6,8 @@ let isCaller = false;
 
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
-const statusText = document.getElementById("status");
+const placeholder = document.getElementById("placeholder");
+const searching = document.getElementById("searching");
 
 const config = {
   iceServers: [
@@ -19,16 +20,35 @@ const config = {
   ]
 };
 
+/* UI STATES */
+function showSearching() {
+  searching.style.display = "block";
+  placeholder.style.display = "none";
+  remoteVideo.style.display = "none";
+}
+
+function showVideo() {
+  searching.style.display = "none";
+  placeholder.style.display = "none";
+  remoteVideo.style.display = "block";
+}
+
+function showPlaceholder() {
+  searching.style.display = "none";
+  placeholder.style.display = "block";
+  remoteVideo.style.display = "none";
+}
+
 /* START */
 document.getElementById("startBtn").onclick = async () => {
-  statusText.innerText = "Searching...";
-
   localStream = await navigator.mediaDevices.getUserMedia({
     video: true,
     audio: true
   });
 
   localVideo.srcObject = localStream;
+
+  showSearching();
 
   socket.emit("start");
 };
@@ -45,7 +65,7 @@ function createPeer() {
 
   peerConnection.ontrack = (event) => {
     remoteVideo.srcObject = event.streams[0];
-    statusText.innerText = "Connected 🎉";
+    showVideo();
   };
 
   peerConnection.onicecandidate = (event) => {
@@ -63,9 +83,7 @@ socket.on("matched", (data) => {
 
   createPeer();
 
-  if (isCaller) {
-    createOffer();
-  }
+  if (isCaller) createOffer();
 });
 
 /* OFFER */
@@ -108,34 +126,36 @@ document.getElementById("nextBtn").onclick = () => {
   }
 
   remoteVideo.srcObject = null;
-  statusText.innerText = "Searching...";
+
+  showSearching();
 
   socket.emit("start");
 };
 
 /* STOP */
 document.getElementById("stopBtn").onclick = () => {
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+
   if (localStream) {
     localStream.getTracks().forEach(track => track.stop());
   }
 
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
-  }
-
   remoteVideo.srcObject = null;
-  statusText.innerText = "Stopped";
+
+  showPlaceholder();
 };
 
 /* PARTNER LEFT */
 socket.on("partner_left", () => {
-  statusText.innerText = "Partner left. Searching again...";
-
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;
   }
+
+  showSearching();
 
   socket.emit("start");
 });
