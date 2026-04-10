@@ -10,25 +10,29 @@
 
 <div class="container">
 
+  <!-- REMOTE -->
   <div class="remote">
     <img id="placeholder" src="poster.jpg">
     <video id="remoteVideo" autoplay playsinline></video>
 
-    <div id="searching">Searching...</div>
+    <div id="searching">
+      <div class="loader"></div>
+    </div>
   </div>
 
+  <!-- LOCAL -->
   <div class="local">
     <video id="localVideo" autoplay muted playsinline></video>
   </div>
 
-  <!-- LEFT CONTROLS -->
+  <!-- LEFT BUTTONS -->
   <div class="controls-left">
     <button id="startBtn">Start</button>
     <button id="nextBtn">Next</button>
     <button id="stopBtn">Stop</button>
   </div>
 
-  <!-- RIGHT CONTROLS -->
+  <!-- RIGHT BUTTONS -->
   <div class="controls-right">
     <button id="filterBtn">Filter</button>
     <button id="cameraBtn">Switch Cam</button>
