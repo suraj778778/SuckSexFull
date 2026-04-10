@@ -2,40 +2,22 @@ const socket = io();
 
 let localStream;
 let peerConnection;
-let currentFilter = 0;
 let facingMode = "user";
-
-const filters = [
-  "none",
-  "grayscale(100%)",
-  "sepia(100%)",
-  "contrast(200%)",
-  "blur(5px)",
-  "hue-rotate(90deg)"
-];
 
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
-const placeholder = document.getElementById("placeholder");
 const searching = document.getElementById("searching");
+const placeholder = document.getElementById("placeholder");
 
-const config = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-};
-
-/* CAMERA */
-async function startCamera() {
+/* START */
+startBtn.onclick = async () => {
   localStream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode },
     audio: true
   });
 
   localVideo.srcObject = localStream;
-}
 
-/* START */
-startBtn.onclick = async () => {
-  await startCamera();
   searching.style.display = "block";
   placeholder.style.display = "none";
 
@@ -44,7 +26,9 @@ startBtn.onclick = async () => {
 
 /* CREATE PEER */
 function createPeer() {
-  peerConnection = new RTCPeerConnection(config);
+  peerConnection = new RTCPeerConnection({
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+  });
 
   localStream.getTracks().forEach(track => {
     peerConnection.addTrack(track, localStream);
@@ -66,6 +50,7 @@ function createPeer() {
 /* MATCH */
 socket.on("matched", ({ caller }) => {
   createPeer();
+
   if (caller) createOffer();
 });
 
@@ -77,6 +62,7 @@ async function createOffer() {
 
 socket.on("webrtc_offer", async ({ sdp }) => {
   createPeer();
+
   await peerConnection.setRemoteDescription(sdp);
 
   const answer = await peerConnection.createAnswer();
@@ -92,6 +78,9 @@ socket.on("webrtc_answer", async ({ sdp }) => {
 /* NEXT */
 nextBtn.onclick = () => {
   peerConnection?.close();
+  remoteVideo.style.display = "none";
+  searching.style.display = "block";
+
   socket.emit("next");
 };
 
@@ -99,19 +88,14 @@ nextBtn.onclick = () => {
 stopBtn.onclick = () => {
   peerConnection?.close();
   localStream?.getTracks().forEach(t => t.stop());
+
   remoteVideo.style.display = "none";
   placeholder.style.display = "block";
+  searching.style.display = "none";
 };
 
-/* FILTER */
-filterBtn.onclick = () => {
-  currentFilter = (currentFilter + 1) % filters.length;
-  remoteVideo.style.filter = filters[currentFilter];
-  localVideo.style.filter = filters[currentFilter];
-};
-
-/* SWITCH CAMERA */
+/* CAMERA */
 cameraBtn.onclick = async () => {
   facingMode = facingMode === "user" ? "environment" : "user";
-  await startCamera();
+  startBtn.click();
 };
