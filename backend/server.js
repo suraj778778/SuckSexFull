@@ -13,17 +13,15 @@ let queue = [];
 
 io.on('connection', (socket) => {
 
+  console.log("User connected:", socket.id);
+
   socket.on("start", () => {
-
-    // Remove duplicates
     queue = queue.filter(id => id !== socket.id);
-
     queue.push(socket.id);
-
-    tryMatch();
+    matchUsers();
   });
 
-  function tryMatch() {
+  function matchUsers() {
     while (queue.length >= 2) {
       const id1 = queue.shift();
       const id2 = queue.shift();
@@ -38,19 +36,27 @@ io.on('connection', (socket) => {
 
       user1.emit("matched", { caller: true });
       user2.emit("matched", { caller: false });
+
+      console.log("MATCHED:", id1, id2);
     }
   }
 
   socket.on("webrtc_offer", ({ sdp }) => {
-    io.to(socket.partner).emit("webrtc_offer", { sdp });
+    if (socket.partner) {
+      io.to(socket.partner).emit("webrtc_offer", { sdp });
+    }
   });
 
   socket.on("webrtc_answer", ({ sdp }) => {
-    io.to(socket.partner).emit("webrtc_answer", { sdp });
+    if (socket.partner) {
+      io.to(socket.partner).emit("webrtc_answer", { sdp });
+    }
   });
 
   socket.on("webrtc_ice_candidate", ({ candidate }) => {
-    io.to(socket.partner).emit("webrtc_ice_candidate", { candidate });
+    if (socket.partner) {
+      io.to(socket.partner).emit("webrtc_ice_candidate", { candidate });
+    }
   });
 
   socket.on("next", () => {
@@ -69,6 +75,9 @@ io.on('connection', (socket) => {
       io.to(socket.partner).emit("partner_left");
     }
   });
+
 });
 
-server.listen(3000);
+server.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
