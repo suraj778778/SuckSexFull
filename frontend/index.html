@@ -1,104 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SuckSexFull</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <main class="app">
-      <section id="landing-page" class="screen active card center-content">
-        <h1 class="brand">SuckSexFull</h1>
-        <p class="muted">Random chat & video calls with real people.</p>
-        <button id="landing-continue" class="btn btn-primary bottom-btn">Continue</button>
-      </section>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuckSexFull</title>
 
-      <section id="setup-page" class="screen card">
-        <h2>User Setup</h2>
-        <label for="username">Username</label>
-        <input id="username" type="text" maxlength="20" placeholder="Choose a unique username" />
+<link rel="stylesheet" href="styles.css">
+</head>
 
-        <label for="gender">Gender</label>
-        <select id="gender">
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
+<body>
 
-        <label for="preference">Match with</label>
-        <select id="preference">
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="random">Random</option>
-        </select>
+<div class="container">
 
-        <button id="setup-continue" class="btn btn-primary">Continue</button>
-        <p id="setup-error" class="error-text"></p>
-      </section>
+  <!-- REMOTE VIDEO -->
+  <div class="remote">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <div id="status">Click Start to begin</div>
+  </div>
 
-      <section id="mode-page" class="screen card center-content">
-        <h2>Select a Mode</h2>
-        <div class="mode-buttons">
-          <button data-mode="text" class="btn btn-primary mode-btn">Text Chat</button>
-          <button data-mode="video" class="btn btn-secondary mode-btn">Video Call</button>
-        </div>
-      </section>
+  <!-- LOCAL VIDEO -->
+  <div class="local">
+    <video id="localVideo" autoplay muted playsinline></video>
+  </div>
 
-      <section id="search-page" class="screen card center-content">
-        <div class="loader"></div>
-        <h2>Searching...</h2>
-        <p class="muted">Looking for a compatible random user.</p>
-      </section>
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button id="startBtn" class="start">Start</button>
+    <button id="nextBtn" class="next">Next</button>
+    <button id="stopBtn" class="stop">Stop</button>
 
-      <section id="chat-page" class="screen card">
-        <header class="panel-header">
-          <div>
-            <h3 id="chat-title">Text Chat</h3>
-            <p id="chat-subtitle" class="muted"></p>
-          </div>
-          <div class="header-actions">
-            <button id="chat-next" class="btn btn-secondary">Next</button>
-            <button id="chat-add-friend" class="btn btn-secondary">Add Friend</button>
-          </div>
-        </header>
+    <select id="gender">
+      <option value="">I am</option>
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+    </select>
+  </div>
 
-        <div id="chat-messages" class="messages"></div>
+</div>
 
-        <form id="chat-form" class="input-row" autocomplete="off">
-          <input id="chat-input" type="text" placeholder="Type your message" />
-          <button type="submit" class="btn btn-primary">Send</button>
-        </form>
+<script src="/socket.io/socket.io.js"></script>
+<script src="script.js"></script>
 
-        <div class="reconnect-row">
-          <button id="reconnect-last" class="btn btn-secondary">Reconnect with Last User</button>
-          <select id="friend-select"></select>
-          <button id="reconnect-friend" class="btn btn-secondary">Reconnect Friend</button>
-        </div>
-      </section>
-
-      <section id="video-page" class="screen card">
-        <header class="panel-header video-header">
-          <div>
-            <h3>Video Call</h3>
-            <p id="video-subtitle" class="muted"></p>
-          </div>
-        </header>
-        <div class="video-container">
-          <video id="remote-video" class="remote-video" autoplay playsinline></video>
-          <video id="local-video" class="local-video" autoplay muted playsinline></video>
-          <div class="video-actions">
-            <button id="video-end" class="btn btn-secondary video-action-btn">End</button>
-            <button id="video-next" class="btn btn-secondary video-action-btn">Next</button>
-            <button id="video-add-friend" class="btn btn-secondary video-action-btn">Add Friend</button>
-          </div>
-        </div>
-      </section>
-
-      <p id="global-notice" class="notice"></p>
-    </main>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
-  </body>
+</body>
 </html>
