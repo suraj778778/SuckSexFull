@@ -1,15 +1,15 @@
 const socket = io();
 
 let localStream;
-let peerConnection;
-let isCaller = false;
+let peerConnection = null;
 let facingMode = "user";
 
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 const searching = document.getElementById("searching");
+const placeholder = document.getElementById("placeholder");
 
-/* ICE (FIXED WITH TURN) */
+/* ICE SERVERS */
 const config = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -30,7 +30,8 @@ startBtn.onclick = async () => {
 
   localVideo.srcObject = localStream;
 
-  searching.style.display = "block";
+  placeholder.style.display = "none";
+  searching.style.display = "flex";
 
   socket.emit("start");
 };
@@ -45,40 +46,52 @@ function createPeer() {
     peerConnection.addTrack(track, localStream);
   });
 
-  peerConnection.ontrack = (e) => {
-    remoteVideo.srcObject = e.streams[0];
+  peerConnection.ontrack = (event) => {
+    console.log("REMOTE STREAM RECEIVED");
+
+    remoteVideo.srcObject = event.streams[0];
     remoteVideo.style.display = "block";
+
     searching.style.display = "none";
   };
 
-  peerConnection.onicecandidate = (e) => {
-    if (e.candidate) {
-      socket.emit("webrtc_ice_candidate", { candidate: e.candidate });
+  peerConnection.onicecandidate = (event) => {
+    if (event.candidate) {
+      socket.emit("webrtc_ice_candidate", {
+        candidate: event.candidate
+      });
     }
   };
 }
 
 /* MATCH */
 socket.on("matched", ({ caller }) => {
-  isCaller = caller;
+  console.log("MATCHED");
 
   createPeer();
 
-  if (isCaller) createOffer();
+  if (caller) {
+    createOffer();
+  }
 });
 
 /* OFFER */
 async function createOffer() {
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
+
   socket.emit("webrtc_offer", { sdp: offer });
 }
 
 /* RECEIVE OFFER */
 socket.on("webrtc_offer", async ({ sdp }) => {
+  console.log("OFFER RECEIVED");
+
   createPeer();
 
-  await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+  await peerConnection.setRemoteDescription(
+    new RTCSessionDescription(sdp)
+  );
 
   const answer = await peerConnection.createAnswer();
   await peerConnection.setLocalDescription(answer);
@@ -88,52 +101,58 @@ socket.on("webrtc_offer", async ({ sdp }) => {
 
 /* RECEIVE ANSWER */
 socket.on("webrtc_answer", async ({ sdp }) => {
-  await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+  console.log("ANSWER RECEIVED");
+
+  await peerConnection.setRemoteDescription(
+    new RTCSessionDescription(sdp)
+  );
 });
 
 /* ICE */
 socket.on("webrtc_ice_candidate", async ({ candidate }) => {
-  if (peerConnection) {
-    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+  try {
+    if (peerConnection) {
+      await peerConnection.addIceCandidate(
+        new RTCIceCandidate(candidate)
+      );
+    }
+  } catch (e) {
+    console.log("ICE ERROR", e);
   }
 });
 
 /* NEXT */
 nextBtn.onclick = () => {
-  peerConnection?.close();
-  peerConnection = null;
+  resetConnection();
 
-  remoteVideo.style.display = "none";
-  searching.style.display = "block";
+  searching.style.display = "flex";
 
   socket.emit("next");
 };
 
 /* STOP */
 stopBtn.onclick = () => {
-  peerConnection?.close();
-  peerConnection = null;
+  resetConnection();
 
-  localStream?.getTracks().forEach(t => t.stop());
+  localStream?.getTracks().forEach(track => track.stop());
 
-  remoteVideo.style.display = "none";
+  placeholder.style.display = "block";
   searching.style.display = "none";
 };
+
+/* RESET */
+function resetConnection() {
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+
+  remoteVideo.srcObject = null;
+  remoteVideo.style.display = "none";
+}
 
 /* SWITCH CAMERA */
 cameraBtn.onclick = async () => {
   facingMode = facingMode === "user" ? "environment" : "user";
   startBtn.click();
 };
-
-/* 🔥 TAP TO SWAP VIDEO */
-remoteVideo.onclick = swap;
-localVideo.onclick = swap;
-
-function swap() {
-  remoteVideo.classList.toggle("small");
-  remoteVideo.classList.toggle("fullscreen");
-
-  localVideo.classList.toggle("small");
-  localVideo.classList.toggle("fullscreen");
-}
