@@ -1,10 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SuckSexFull</title>
-
+<title>Video Chat</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -12,33 +10,28 @@
 
 <div class="container">
 
-  <!-- REMOTE VIDEO / IMAGE -->
   <div class="remote">
-    <img id="placeholder" src="poster.jpg" />
+    <img id="placeholder" src="poster.jpg">
     <video id="remoteVideo" autoplay playsinline></video>
 
-    <div id="searching">
-      <div class="loader"></div>
-      <p>Searching...</p>
-    </div>
+    <div id="searching">Searching...</div>
   </div>
 
-  <!-- LOCAL VIDEO -->
   <div class="local">
     <video id="localVideo" autoplay muted playsinline></video>
   </div>
 
-  <!-- CONTROLS -->
-  <div class="controls">
-    <button id="startBtn" class="start">Start</button>
-    <button id="nextBtn" class="next">Next</button>
-    <button id="stopBtn" class="stop">Stop</button>
+  <!-- LEFT CONTROLS -->
+  <div class="controls-left">
+    <button id="startBtn">Start</button>
+    <button id="nextBtn">Next</button>
+    <button id="stopBtn">Stop</button>
+  </div>
 
-    <select id="gender">
-      <option value="">I am</option>
-      <option value="male">Male</option>
-      <option value="female">Female</option>
-    </select>
+  <!-- RIGHT CONTROLS -->
+  <div class="controls-right">
+    <button id="filterBtn">Filter</button>
+    <button id="cameraBtn">Switch Cam</button>
   </div>
 
 </div>
