@@ -4,6 +4,7 @@ let localStream;
 let peerConnection;
 let isFront = true;
 let isSwapped = false;
+let isSearching = false;
 
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
@@ -11,18 +12,18 @@ const remoteVideo = document.getElementById("remoteVideo");
 const placeholder = document.getElementById("placeholder");
 const searching = document.getElementById("searching");
 
+/* INIT STATE */
+searching.style.display = "none";
+
 /* ICE */
 const config = {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" }
-  ]
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
 };
 
 /* START */
 document.getElementById("startBtn").onclick = async () => {
   await startCamera();
-  showSearching(true);
-  socket.emit("start");
+  startSearching();
 };
 
 /* CAMERA */
@@ -33,6 +34,17 @@ async function startCamera() {
   });
 
   localVideo.srcObject = localStream;
+}
+
+/* SEARCH */
+function startSearching() {
+  isSearching = true;
+  searching.style.display = "flex";
+
+  placeholder.style.display = "none";
+  remoteVideo.style.display = "none";
+
+  socket.emit("start");
 }
 
 /* PEER */
@@ -46,8 +58,9 @@ function createPeer() {
   peerConnection.ontrack = (event) => {
     remoteVideo.srcObject = event.streams[0];
     remoteVideo.style.display = "block";
-    placeholder.style.display = "none";
-    showSearching(false);
+
+    searching.style.display = "none";
+    isSearching = false;
   };
 
   peerConnection.onicecandidate = (event) => {
@@ -66,7 +79,6 @@ socket.on("matched", async ({ caller }) => {
   if (caller) {
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
-
     socket.emit("webrtc_offer", { sdp: offer });
   }
 });
@@ -95,11 +107,10 @@ socket.on("webrtc_ice_candidate", async ({ candidate }) => {
   } catch {}
 });
 
-/* NEXT */
+/* NEXT (OMEGLE STYLE) */
 document.getElementById("nextBtn").onclick = () => {
   resetCall();
-  showSearching(true);
-  socket.emit("next");
+  startSearching();
 };
 
 /* STOP */
@@ -109,40 +120,62 @@ document.getElementById("stopBtn").onclick = () => {
 
 /* RESET */
 function resetCall() {
-  if (peerConnection) peerConnection.close();
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
 
   remoteVideo.srcObject = null;
   remoteVideo.style.display = "none";
-  placeholder.style.display = "block";
 
-  socket.emit("disconnect");
+  searching.style.display = "none";
+  isSearching = false;
+
+  socket.emit("next");
 }
 
 /* PARTNER LEFT */
 socket.on("partner_left", () => {
   resetCall();
-  showSearching(true);
+  startSearching();
 });
 
-/* SEARCH UI */
-function showSearching(show) {
-  searching.style.display = show ? "flex" : "none";
-}
-
-/* 🔁 SWAP VIDEO */
-localVideo.onclick = remoteVideo.onclick = () => {
+/* 🔁 PERFECT SWAP */
+function swapVideos() {
   isSwapped = !isSwapped;
 
   if (isSwapped) {
-    localVideo.classList.add("big");
-    remoteVideo.classList.add("small");
-  } else {
-    localVideo.classList.remove("big");
-    remoteVideo.classList.remove("small");
-  }
-};
+    localVideo.style.width = "100%";
+    localVideo.style.height = "100%";
+    localVideo.style.top = "0";
+    localVideo.style.left = "0";
+    localVideo.style.zIndex = "1";
 
-/* 🎨 FILTER */
+    remoteVideo.style.width = "120px";
+    remoteVideo.style.height = "160px";
+    remoteVideo.style.bottom = "80px";
+    remoteVideo.style.right = "10px";
+    remoteVideo.style.zIndex = "10";
+  } else {
+    remoteVideo.style.width = "100%";
+    remoteVideo.style.height = "100%";
+    remoteVideo.style.top = "0";
+    remoteVideo.style.left = "0";
+    remoteVideo.style.zIndex = "1";
+
+    localVideo.style.width = "120px";
+    localVideo.style.height = "160px";
+    localVideo.style.bottom = "80px";
+    localVideo.style.right = "10px";
+    localVideo.style.zIndex = "10";
+  }
+}
+
+/* CLICK TO SWAP */
+localVideo.onclick = swapVideos;
+remoteVideo.onclick = swapVideos;
+
+/* FILTER */
 let filterIndex = 0;
 const filters = [
   "none",
@@ -158,7 +191,7 @@ document.getElementById("filterBtn").onclick = () => {
   localVideo.style.filter = filters[filterIndex];
 };
 
-/* 🔄 SWITCH CAM */
+/* SWITCH CAMERA */
 document.getElementById("cameraBtn").onclick = async () => {
   isFront = !isFront;
   await startCamera();
