@@ -1,45 +1,42 @@
 const socket = io();
 
 let localStream;
-let peerConnection = null;
-let facingMode = "user";
+let peerConnection;
+let isFront = true;
+let isSwapped = false;
 
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
-const searching = document.getElementById("searching");
-const placeholder = document.getElementById("placeholder");
 
-/* ICE SERVERS */
+const placeholder = document.getElementById("placeholder");
+const searching = document.getElementById("searching");
+
+/* ICE */
 const config = {
   iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject"
-    }
+    { urls: "stun:stun.l.google.com:19302" }
   ]
 };
 
 /* START */
-startBtn.onclick = async () => {
+document.getElementById("startBtn").onclick = async () => {
+  await startCamera();
+  showSearching(true);
+  socket.emit("start");
+};
+
+/* CAMERA */
+async function startCamera() {
   localStream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode },
+    video: { facingMode: isFront ? "user" : "environment" },
     audio: true
   });
 
   localVideo.srcObject = localStream;
+}
 
-  placeholder.style.display = "none";
-  searching.style.display = "flex";
-
-  socket.emit("start");
-};
-
-/* CREATE PEER */
+/* PEER */
 function createPeer() {
-  if (peerConnection) return;
-
   peerConnection = new RTCPeerConnection(config);
 
   localStream.getTracks().forEach(track => {
@@ -47,12 +44,10 @@ function createPeer() {
   });
 
   peerConnection.ontrack = (event) => {
-    console.log("REMOTE STREAM RECEIVED");
-
     remoteVideo.srcObject = event.streams[0];
     remoteVideo.style.display = "block";
-
-    searching.style.display = "none";
+    placeholder.style.display = "none";
+    showSearching(false);
   };
 
   peerConnection.onicecandidate = (event) => {
@@ -65,33 +60,22 @@ function createPeer() {
 }
 
 /* MATCH */
-socket.on("matched", ({ caller }) => {
-  console.log("MATCHED");
-
+socket.on("matched", async ({ caller }) => {
   createPeer();
 
   if (caller) {
-    createOffer();
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    socket.emit("webrtc_offer", { sdp: offer });
   }
 });
 
 /* OFFER */
-async function createOffer() {
-  const offer = await peerConnection.createOffer();
-  await peerConnection.setLocalDescription(offer);
-
-  socket.emit("webrtc_offer", { sdp: offer });
-}
-
-/* RECEIVE OFFER */
 socket.on("webrtc_offer", async ({ sdp }) => {
-  console.log("OFFER RECEIVED");
-
   createPeer();
 
-  await peerConnection.setRemoteDescription(
-    new RTCSessionDescription(sdp)
-  );
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
 
   const answer = await peerConnection.createAnswer();
   await peerConnection.setLocalDescription(answer);
@@ -99,60 +83,83 @@ socket.on("webrtc_offer", async ({ sdp }) => {
   socket.emit("webrtc_answer", { sdp: answer });
 });
 
-/* RECEIVE ANSWER */
+/* ANSWER */
 socket.on("webrtc_answer", async ({ sdp }) => {
-  console.log("ANSWER RECEIVED");
-
-  await peerConnection.setRemoteDescription(
-    new RTCSessionDescription(sdp)
-  );
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
 });
 
 /* ICE */
 socket.on("webrtc_ice_candidate", async ({ candidate }) => {
   try {
-    if (peerConnection) {
-      await peerConnection.addIceCandidate(
-        new RTCIceCandidate(candidate)
-      );
-    }
-  } catch (e) {
-    console.log("ICE ERROR", e);
-  }
+    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+  } catch {}
 });
 
 /* NEXT */
-nextBtn.onclick = () => {
-  resetConnection();
-
-  searching.style.display = "flex";
-
+document.getElementById("nextBtn").onclick = () => {
+  resetCall();
+  showSearching(true);
   socket.emit("next");
 };
 
 /* STOP */
-stopBtn.onclick = () => {
-  resetConnection();
-
-  localStream?.getTracks().forEach(track => track.stop());
-
-  placeholder.style.display = "block";
-  searching.style.display = "none";
+document.getElementById("stopBtn").onclick = () => {
+  resetCall();
 };
 
 /* RESET */
-function resetConnection() {
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
-  }
+function resetCall() {
+  if (peerConnection) peerConnection.close();
 
   remoteVideo.srcObject = null;
   remoteVideo.style.display = "none";
+  placeholder.style.display = "block";
+
+  socket.emit("disconnect");
 }
 
-/* SWITCH CAMERA */
-cameraBtn.onclick = async () => {
-  facingMode = facingMode === "user" ? "environment" : "user";
-  startBtn.click();
+/* PARTNER LEFT */
+socket.on("partner_left", () => {
+  resetCall();
+  showSearching(true);
+});
+
+/* SEARCH UI */
+function showSearching(show) {
+  searching.style.display = show ? "flex" : "none";
+}
+
+/* 🔁 SWAP VIDEO */
+localVideo.onclick = remoteVideo.onclick = () => {
+  isSwapped = !isSwapped;
+
+  if (isSwapped) {
+    localVideo.classList.add("big");
+    remoteVideo.classList.add("small");
+  } else {
+    localVideo.classList.remove("big");
+    remoteVideo.classList.remove("small");
+  }
+};
+
+/* 🎨 FILTER */
+let filterIndex = 0;
+const filters = [
+  "none",
+  "grayscale(1)",
+  "sepia(1)",
+  "contrast(1.5)",
+  "brightness(1.3)",
+  "blur(2px)"
+];
+
+document.getElementById("filterBtn").onclick = () => {
+  filterIndex = (filterIndex + 1) % filters.length;
+  localVideo.style.filter = filters[filterIndex];
+};
+
+/* 🔄 SWITCH CAM */
+document.getElementById("cameraBtn").onclick = async () => {
+  isFront = !isFront;
+  await startCamera();
 };
