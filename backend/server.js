@@ -7,40 +7,57 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+const PORT = process.env.PORT || 3000;
+
 app.use(express.static(path.join(__dirname, '../frontend')));
 
+/* 🔥 NEW MATCHING QUEUE */
 let queue = [];
 
 io.on('connection', (socket) => {
-
   console.log("User connected:", socket.id);
 
+  /* START SEARCH */
   socket.on("start", () => {
-    queue = queue.filter(id => id !== socket.id);
-    queue.push(socket.id);
-    matchUsers();
+    if (queue.length > 0) {
+      const partner = queue.shift();
+
+      socket.partner = partner.id;
+      partner.partner = socket.id;
+
+      socket.emit("matched", { caller: true });
+      partner.emit("matched", { caller: false });
+
+    } else {
+      queue.push(socket);
+    }
   });
 
-  function matchUsers() {
-    while (queue.length >= 2) {
-      const id1 = queue.shift();
-      const id2 = queue.shift();
+  /* NEXT USER */
+  socket.on("next", () => {
+    leavePartner(socket);
 
-      const user1 = io.sockets.sockets.get(id1);
-      const user2 = io.sockets.sockets.get(id2);
+    if (queue.length > 0) {
+      const partner = queue.shift();
 
-      if (!user1 || !user2) continue;
+      socket.partner = partner.id;
+      partner.partner = socket.id;
 
-      user1.partner = id2;
-      user2.partner = id1;
+      socket.emit("matched", { caller: true });
+      partner.emit("matched", { caller: false });
 
-      user1.emit("matched", { caller: true });
-      user2.emit("matched", { caller: false });
-
-      console.log("MATCHED:", id1, id2);
+    } else {
+      queue.push(socket);
     }
-  }
+  });
 
+  /* DISCONNECT */
+  socket.on("disconnect", () => {
+    leavePartner(socket);
+    queue = queue.filter(u => u.id !== socket.id);
+  });
+
+  /* WEBRTC */
   socket.on("webrtc_offer", ({ sdp }) => {
     if (socket.partner) {
       io.to(socket.partner).emit("webrtc_offer", { sdp });
@@ -59,25 +76,22 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on("next", () => {
-    if (socket.partner) {
-      io.to(socket.partner).emit("partner_left");
+});
+
+/* CLEAN PARTNER */
+function leavePartner(socket) {
+  if (socket.partner) {
+    io.to(socket.partner).emit("partner_left");
+
+    const partnerSocket = io.sockets.sockets.get(socket.partner);
+    if (partnerSocket) {
+      partnerSocket.partner = null;
     }
 
     socket.partner = null;
-    socket.emit("start");
-  });
+  }
+}
 
-  socket.on("disconnect", () => {
-    queue = queue.filter(id => id !== socket.id);
-
-    if (socket.partner) {
-      io.to(socket.partner).emit("partner_left");
-    }
-  });
-
-});
-
-server.listen(3000, () => {
-  console.log("Server running on port 3000");
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
